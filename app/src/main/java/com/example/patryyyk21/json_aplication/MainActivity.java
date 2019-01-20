@@ -21,7 +21,11 @@ public class MainActivity extends AppCompatActivity {
 
         ListView lvJson = (ListView)findViewById(R.id.JSON_List);
         Button bNewPost = (Button)findViewById(R.id.b_New);
-
+        JSONAsyncTask jsonTest = new JSONAsyncTask(this);
+        //jsonTest.doInBackground("read");
+        //jsonTest.execute("read");
+        //jsonTest.execute("update", "7", "Patryk", "Nowy wpis");
+        //jsonTest.doInBackground();
         bNewPost.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

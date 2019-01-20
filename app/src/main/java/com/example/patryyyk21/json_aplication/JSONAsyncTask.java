@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -27,13 +26,12 @@ import java.util.HashMap;
 
 public class JSONAsyncTask extends AsyncTask<String, String, Boolean> {
 
-    private String regUrl;
+    private String regUrl, indeks;
     private URL url = null;
     private Activity context;
     private ListView lvList;
     private HttpURLConnection conn;
     public ArrayList<HashMap<String, String>> itemPost;
-
 
     public JSONAsyncTask(Activity cont){
         this.context = cont;
@@ -45,6 +43,7 @@ public class JSONAsyncTask extends AsyncTask<String, String, Boolean> {
     protected void onPreExecute() {
         super.onPreExecute();
         regUrl = "http://pmazurek.sk5.eu/android/json/post/";
+        indeks = ""; // Twój numer indeksu
         //regUrl = "http://ux.up.krakow.pl/~pmazurek/JSON/post/";
     }
 
@@ -59,15 +58,15 @@ public class JSONAsyncTask extends AsyncTask<String, String, Boolean> {
                     result = true;
                     break;
                 case "add":
-                    AddPost("1010", params[1], params[2]);
+                    AddPost(indeks, params[1], params[2]);
                     result = false;
                     break;
                 case "update":
-                    UpdatePost("1010", params[1], params[2],params[3]);
+                    UpdatePost(indeks, params[1], params[2],params[3]);
                     result = false;
                     break;
                 case "delete":
-                    DeletePost(params[1], params[2]);
+                    DeletePost(indeks, params[1]);
                     result = false;
                     break;
                     default:
@@ -96,6 +95,7 @@ public class JSONAsyncTask extends AsyncTask<String, String, Boolean> {
             SimpleAdapter sAdapter = new SimpleAdapter(this.context.getApplicationContext(), itemPost, android.R.layout.simple_list_item_2,
                     new String[] {"title", "post"}, new int[]{android.R.id.text1, android.R.id.text2});
             lvList.setAdapter(sAdapter);
+            publishProgress(""+ itemPost.size());
         }
     }
 
@@ -151,15 +151,74 @@ public class JSONAsyncTask extends AsyncTask<String, String, Boolean> {
     }
 
     private void AddPost(String indeks, String nick, String text){
-
+        try {
+            JSONArray jsonArray = new JSONArray();
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("indeks", indeks);
+            jsonObject.put("nick", nick);
+            jsonObject.put("text",text);
+            jsonArray.put(jsonObject);
+            InputStream input = setDataToHttp(jsonArray);
+            ShowMessage(input);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            conn.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+            conn.disconnect();
+        }
     }
 
     private void UpdatePost(String indeks, String id, String nick, String text){
-
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("indeks", indeks);
+            jsonObject.put("id", id);
+            jsonObject.put("nick", nick);
+            jsonObject.put("text",text);
+            InputStream input = setDataToHttp(jsonObject);
+            ShowMessage(input);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            conn.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+            conn.disconnect();
+        }
     }
 
     private void DeletePost(String indeks, String id){
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("indeks", indeks);
+            jsonObject.put("id", id);
+            InputStream input = setDataToHttp(jsonObject);
+            ShowMessage(input);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            conn.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+            conn.disconnect();
+        }
+    }
 
+    private InputStream setDataToHttp(Object json){
+        OutputStream os = null;
+        try {
+            os = conn.getOutputStream();
+            BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(os, "UTF-8"));
+            writer.write(json.toString());
+            writer.flush();
+            writer.close();
+            os.close();
+            return conn.getInputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+            conn.disconnect();
+            return null;
+        }
     }
 
     private void FromJsonToList(String jsonStr) {
